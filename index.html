@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>게시물 앱</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        #postInput, #imageInput {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            box-sizing: border-box;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            background-color: #4CAF50; /* Green */
+            color: white;
+            padding: 10px 20px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            background-color: #ffffff;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: start;
+        }
+        li img {
+            max-width: 100%;
+            margin-top: 10px;
+        }
+        li button {
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            align-self: center;
+        }
+    </style>
+</head>
+<body>
+    <h2>게시물 작성</h2>
+    <textarea id="postInput" name="postInput" rows="4" placeholder="여기에 내용을 입력하세요..."></textarea>
+    <input type="file" id="imageInput" accept="image/*">
+    <button onclick="submitPost()">게시물 제출</button>
+
+    <ul id="postList"></ul>
+
+    <script>
+        window.onload = function() {
+            displayPosts();
+        };
+
+        function submitPost() {
+            const postInput = document.getElementById('postInput').value;
+            const imageInput = document.getElementById('imageInput').files[0];
+
+            if (!postInput.trim() && !imageInput) {
+                alert('글 내용이나 이미지를 입력해주세요.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const posts = JSON.parse(localStorage.getItem('posts')) || [];
+                const post = {
+                    id: new Date().getTime(),
+                    content: postInput,
+                    image: e.target.result // 이미지는 Base64 형식으로 저장
+                };
+                posts.push(post);
+                localStorage.setItem('posts', JSON.stringify(posts));
+                displayPosts();
+                document.getElementById('postInput').value = ''; // 입력란 초기화
+                document.getElementById('imageInput').value = ''; // 파일 입력 초기화
+            };
+            if (imageInput) {
+                reader.readAsDataURL(imageInput);
+            } else {
+                reader.onload({target: {result: null}}); // 이미지 없이 글만 있는 경우
+            }
+        }
+
+        function displayPosts() {
+            const posts = JSON.parse(localStorage.getItem('posts')) || [];
+            const postList = document.getElementById('postList');
+            postList.innerHTML = '';
+            posts.forEach(post => {
+                const li = document.createElement('li');
+                li.textContent = post.content;
+                
+                if (post.image) {
+                    const img = document.createElement('img');
+                    img.src =post.image;
+                    img.alt = "Uploaded Image";
+                    li.appendChild(img);
+                }
+
+                // 삭제 버튼 추가
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = '삭제';
+                deleteButton.onclick = function() { deletePost(post.id); };
+                li.appendChild(deleteButton);
+
+                postList.appendChild(li);
+            });
+        }
+
+        function deletePost(postId) {
+            let posts = JSON.parse(localStorage.getItem('posts')) || [];
+            posts = posts.filter(post => post.id !== postId);
+            localStorage.setItem('posts', JSON.stringify(posts));
+            displayPosts(); // 업데이트된 목록을 다시 표시
+        }
+    </script>
+</body>
+</html>
+
